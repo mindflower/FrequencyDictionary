@@ -33,9 +33,8 @@ namespace dictionary {
          if (m_isSingleWordBlock) {
             return;
         }
-
         for (auto end = read(block.block, offset);
-            end < block.block.size(); end = read(block.block, end)) {
+            end < block.block.size(); end = read(block.block, end + 1)) {
             addWord(m_accumulator);
         }
         if (block.isLastBlock) {
@@ -55,7 +54,6 @@ namespace dictionary {
                 return addWord(word);
             }
         };
-
         if (block.idx != 0) {
             const auto wordPart = m_controller.getWordPartForBlock(block.idx);
             addWordMethod(wordPart + m_firstWordLastPart);
@@ -68,12 +66,11 @@ namespace dictionary {
         if (!m_accumulator.empty()) {
             m_accumulator.clear();
         }
-
         auto end = offset;
         for (const auto c : block.substr(offset)) {
-            ++end;
             if (std::isalpha(c)) {
                 m_accumulator += static_cast<unsigned char>(std::tolower(c));
+                ++end;
             }
             else {
                 break;

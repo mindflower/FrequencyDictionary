@@ -87,3 +87,33 @@ TEST(DictonaryTests, SimpleTextTest) {
     });
     EXPECT_EQ(expect.cend(), first);
 }
+
+TEST(DictonaryTests, RepeatTest) {
+    auto mapper = std::make_unique<dictionary::StringBlockMapper>(
+        "the dazzling\n"
+        "the dazzling\n"
+        "the dazzling\n"
+        "the dazzling\n"
+        "the dazzling\n"
+        "the dazzling\n"
+        "the dazzling\n"
+        "the dazzling\n"
+        "the dazzling\n"
+        "the dazzling\n"
+        "the dazzling\n"
+        "the dazzling\n"
+        "the dazzling\n"
+        "the dazzling\n"
+        "the dazzling\n"
+        , 8
+    );
+    const std::vector<dictionary::Node> expect = {
+        {"dazzling", 15},
+        {"the", 15},
+    };
+    const auto result = dictionary::Dictionary{std::move(mapper)}.parse();
+    const auto [first, second] = std::mismatch(expect.cbegin(), expect.cend(), result.cbegin(), [](const auto& rhd, const auto& lhd) {
+        return (rhd.word == lhd.word) && (rhd.frequency == lhd.frequency);
+    });
+    EXPECT_EQ(expect.cend(), first);
+}
