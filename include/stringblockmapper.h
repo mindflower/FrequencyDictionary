@@ -1,13 +1,13 @@
 #pragma once
-#include "mapper.h"
+#include "blockmapper.h"
 #include <string>
 
 namespace dictionary
 {
     //Helper class for unit testing
-    class StringMapper : public Mapper {
+    class StringBlockMapper : public BlockMapper {
     public:
-        StringMapper(std::string_view string, size_t blockSize = 4);
+        StringBlockMapper(std::string_view string, size_t blockSize = 4);
         size_t remap(size_t blockId) override;
         const char* getRawPtr() const override;
         size_t getSize() const override;

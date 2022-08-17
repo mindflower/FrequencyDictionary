@@ -3,9 +3,9 @@
 
 namespace dictionary
 {
-    class Mapper {
+    class BlockMapper {
     public:
-        virtual ~Mapper() = default;
+        virtual ~BlockMapper() = default;
         virtual size_t remap(size_t blockId) = 0;
         virtual const char* getRawPtr() const = 0;
         virtual size_t getSize() const = 0;

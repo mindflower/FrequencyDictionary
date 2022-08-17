@@ -1,64 +1,48 @@
 #include <worker.h>
 #include <cctype>
-#include <sstream>
 
 namespace dictionary {
-    Worker::Worker(DictionaryController& controller, const size_t idx) :
-        m_controller(controller), m_idx(idx) {
+    Worker::Worker(Controller& controller) :
+        m_controller(controller) {
+        m_accumulator.reserve(512);
     }
 
     void Worker::run() {
         while (const auto oBlock = m_controller.getNextBlock()) {
             const auto& block = oBlock.value();
-            const auto nextWordIdx = processFirstWord(block.block);
-            processWords(block, nextWordIdx);
+            const auto offset = processFirstWord(block.block);
+            processWords(block, offset);
             completeFirstWord(block);
         }
         sendWordsToController();
     }
 
     size_t Worker::processFirstWord(std::string_view block) {
-        m_firstWordLastPart.clear();
-        m_isSingleWordBlock = false;
-        if (!block.empty() && !std::isalpha(block[0])) {
-            return 0;
+        const auto offset = read(block, 0);
+        if (!m_accumulator.empty()) {
+            m_firstWordLastPart = m_accumulator;
         }
-
-        std::stringstream ss;
-        size_t idx = 0;
-        for (const auto c : block) {
-            if (std::isalpha(c)) {
-                ss << static_cast<unsigned char>(std::tolower(c));
-            } else {
-                m_firstWordLastPart = ss.str();
-                return idx;
-            }
-            ++idx;
+        else {
+            m_firstWordLastPart.clear();
         }
-        m_isSingleWordBlock = true;
-        m_firstWordLastPart = ss.str();
-        return idx;
+        m_isSingleWordBlock = m_firstWordLastPart.size() == block.size();
+        return offset;
     }
 
-    void Worker::processWords(const Block& block, const size_t startIdx) {
-        std::stringstream key;
-        for (const auto c : block.block.substr(startIdx)) {
-            if (std::isalpha(c)) {
-                key << static_cast<unsigned char>(std::tolower(c));
-            } else {
-                if (key.rdbuf()->in_avail()) {
-                    addWord(key.str());
-                    key.str(std::string{});
-                }
-            }
+    void Worker::processWords(const Block& block, const size_t offset) {
+         if (m_isSingleWordBlock) {
+            return;
         }
-        if (!m_isSingleWordBlock) {
-            if (block.isLastBlock && key.rdbuf()->in_avail()) {
-                addWord(key.str());
-            }
-            else {
-                addWordPart(key.str(), block.idx + 1);
-            }
+
+        for (auto end = read(block.block, offset);
+            end < block.block.size(); end = read(block.block, end)) {
+            addWord(m_accumulator);
+        }
+        if (block.isLastBlock) {
+            addWord(m_accumulator);
+        }
+        else {
+            addWordPart(m_accumulator, block.idx + 1);
         }
     }
 
@@ -72,7 +56,6 @@ namespace dictionary {
             }
         };
 
-
         if (block.idx != 0) {
             const auto wordPart = m_controller.getWordPartForBlock(block.idx);
             addWordMethod(wordPart + m_firstWordLastPart);
@@ -81,8 +64,28 @@ namespace dictionary {
         }
     }
 
+    size_t Worker::read(std::string_view block, const size_t offset) {
+        if (!m_accumulator.empty()) {
+            m_accumulator.clear();
+        }
+
+        auto end = offset;
+        for (const auto c : block.substr(offset)) {
+            ++end;
+            if (std::isalpha(c)) {
+                m_accumulator += static_cast<unsigned char>(std::tolower(c));
+            }
+            else {
+                break;
+            }
+        }
+        return end;
+    }
+
     void Worker::addWord(const std::string& word) {
-        ++m_words[word];
+        if (!word.empty()){
+            ++m_words[word];
+        }
     }
 
     void Worker::addWordPart(const std::string& word, size_t idx) {

@@ -1,23 +1,23 @@
 #include <dictionary.h>
 
 namespace dictionary {
-    Dictionary::Dictionary(std::unique_ptr<Mapper>&& mapper, const size_t workersCount) :
+    Dictionary::Dictionary(std::unique_ptr<BlockMapper>&& mapper, const size_t workersCount) :
         m_controller(std::move(mapper), workersCount), m_workersCount(workersCount) {
     }
 
     std::vector<Node> Dictionary::parse() {
         createWorkers();
         joinWorkers();
-        return createResult();
+        return createDictionary();
     }
 
     void Dictionary::createWorkers() {
         for (size_t idx = 0; idx < m_workersCount; ++idx) {
-            m_workers.emplace_back(m_controller, idx);
+            m_workers.emplace_back(m_controller);
         }
 
-        for (const auto& worker : m_workers) {
-            m_workerThreads.emplace_back(&Worker::run, worker);
+        for (auto& worker : m_workers) {
+            m_workerThreads.emplace_back(&Worker::run, &worker);
         }
     }
 
@@ -29,7 +29,7 @@ namespace dictionary {
         }
     }
 
-    std::vector<Node> Dictionary::createResult() const {
-        return m_controller.createResult();
+    std::vector<Node> Dictionary::createDictionary() const {
+        return m_controller.createDictionary();
     }
 }

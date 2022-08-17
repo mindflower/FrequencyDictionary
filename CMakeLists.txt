@@ -16,5 +16,5 @@ add_subdirectory(src)
 add_subdirectory(tests)
 add_subdirectory(freq)
 
-add_dependencies(freq_tests freq_lib)
+add_dependencies(tests freq_lib)
 add_dependencies(freq freq_lib)

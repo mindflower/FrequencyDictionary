@@ -1,27 +1,27 @@
 #include <gtest/gtest.h>
-#include <stringmapper.h>
+#include <stringblockmapper.h>
 #include <dictionary.h>
 
 TEST(DictonaryTests, EmptyTest) { 
-    auto mapper = std::make_unique<dictionary::StringMapper>("");
+    auto mapper = std::make_unique<dictionary::StringBlockMapper>("");
     const auto result = dictionary::Dictionary{std::move(mapper)}.parse();
     ASSERT_EQ(0, result.size());
 }
 
 TEST(DictonaryTests, SpaceTest) { 
-    auto mapper = std::make_unique<dictionary::StringMapper>("    ");
+    auto mapper = std::make_unique<dictionary::StringBlockMapper>("    ");
     const auto result = dictionary::Dictionary{std::move(mapper)}.parse();
     ASSERT_EQ(0, result.size());
 }
 
 TEST(DictonaryTests, SpecialSymbolsTest) { 
-    auto mapper = std::make_unique<dictionary::StringMapper>("@#$%^&*()   1234  567890 \t");
+    auto mapper = std::make_unique<dictionary::StringBlockMapper>("@#$%^&*()   1234  567890 \t");
     const auto result = dictionary::Dictionary{std::move(mapper)}.parse();
     ASSERT_EQ(0, result.size());
 }
 
 TEST(DictonaryTests, OneWordTest) { 
-    auto mapper = std::make_unique<dictionary::StringMapper>("john");
+    auto mapper = std::make_unique<dictionary::StringBlockMapper>("john");
     const auto result = dictionary::Dictionary{std::move(mapper)}.parse();
     ASSERT_EQ(1, result.size());
 
@@ -35,7 +35,7 @@ TEST(DictonaryTests, TwoWordTest) {
         {"doe", 1},
         {"john", 1},
     };
-    auto mapper = std::make_unique<dictionary::StringMapper>("john doe");
+    auto mapper = std::make_unique<dictionary::StringBlockMapper>("john doe");
     const auto result = dictionary::Dictionary{std::move(mapper)}.parse();
     ASSERT_EQ(2, result.size());
 
@@ -48,7 +48,7 @@ TEST(DictonaryTests, TwoWordTest) {
 }
 
 TEST(DictonaryTests, SameWordsTest) { 
-    auto mapper = std::make_unique<dictionary::StringMapper>("john john john john john");
+    auto mapper = std::make_unique<dictionary::StringBlockMapper>("john john john john john");
     const auto result = dictionary::Dictionary{std::move(mapper)}.parse();
     ASSERT_EQ(1, result.size());
 
@@ -58,7 +58,7 @@ TEST(DictonaryTests, SameWordsTest) {
 }
 
 TEST(DictonaryTests, DifferentCaseTest) { 
-    auto mapper = std::make_unique<dictionary::StringMapper>(" john John jOhn JoHn johN");
+    auto mapper = std::make_unique<dictionary::StringBlockMapper>(" john John jOhn JoHn johN");
     const auto result = dictionary::Dictionary{std::move(mapper)}.parse();
     ASSERT_EQ(1, result.size());
 
@@ -79,7 +79,7 @@ TEST(DictonaryTests, SimpleTextTest) {
         {"who", 1},
     };
 
-    auto mapper = std::make_unique<dictionary::StringMapper>(input);
+    auto mapper = std::make_unique<dictionary::StringBlockMapper>(input);
     const auto result = dictionary::Dictionary{std::move(mapper)}.parse();
 
     const auto [first, second] = std::mismatch(expect.cbegin(), expect.cend(), result.cbegin(), [](const auto& rhd, const auto& lhd) {
